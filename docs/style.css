@@ -487,3 +487,13 @@ form.wizard:not([data-step="5"]) .intake-submit .btn-primary, form.wizard:not([d
 @media (min-width: 720px) {
   .ba-list li { grid-template-columns: minmax(0, 220px) 1fr; align-items: center; }
 }
+
+/* 충격 시나리오 입력표: 칸 안에서 입력과 설명을 세로로 쌓아 겹치지 않게 */
+.scn-table td { vertical-align: middle; }
+.scn-table input[type="month"] { min-width: 9.5em; }
+.scn-table input[name^="months"] { width: 5.5em; }
+.scn-cell { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 9em; }
+.scn-cell .scn-in { width: 7em; }
+.scn-cell .scn-in.sm { width: 5.5em; }
+.scn-row { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.demo-banner { border: 2px solid var(--warn); background: var(--warn-bg); }

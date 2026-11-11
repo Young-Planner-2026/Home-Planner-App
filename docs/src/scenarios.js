@@ -21,7 +21,7 @@
    */
   var SCENARIO_TYPES = {
     incomeDrop: { label: '소득 감소', valueLabel: '감소율', unit: '%', needsStart: true, needsMonths: true, defaults: { value: 0.1, months: 12 } },
-    jobLoss: { label: '실직', valueLabel: '기간 중 월 대체소득(구직급여 등)', unit: '만원', needsStart: true, needsMonths: true, defaults: { value: 0, months: 3 } },
+    jobLoss: { label: '실직', valueLabel: '월 대체소득(구직급여 등)', unit: '만원', needsStart: true, needsMonths: true, defaults: { value: 0, months: 3 } },
     livingRise: { label: '생활비 상승', valueLabel: '상승률', unit: '%', needsStart: true, needsMonths: true, defaults: { value: 0.1, months: 0 } },
     depositTargetRise: { label: '목표 보증금 상승', valueLabel: '상승액', unit: '만원', needsStart: false, needsMonths: false, defaults: { value: 500 } },
     investmentLoss: { label: '투자 손실', valueLabel: '손실률(한 번)', unit: '%', needsStart: true, needsMonths: false, defaults: { value: 0.2 } },

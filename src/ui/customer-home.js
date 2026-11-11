@@ -124,7 +124,7 @@
     var lastRow = cur.lastConfirmed ? engine.rowAt(cur, cur.lastConfirmed) : null;
     var hasProposal = c.d.pending.length > 0;
 
-    return (ui.tourWelcome ? ui.tourWelcome(c) : '') + '<section class="card" aria-labelledby="home-sum"><h2 id="home-sum" class="sr-only">한 줄 요약</h2>' +
+    return (ui.alertDemoBanner ? ui.alertDemoBanner(c) : '') + (c.state.alertDemo ? '' : (ui.tourWelcome ? ui.tourWelcome(c) : '')) + '<section class="card" aria-labelledby="home-sum"><h2 id="home-sum" class="sr-only">한 줄 요약</h2>' +
       '<p class="conclusion ' + sm.cls + '">' + sm.html + '</p>' +
       (hasProposal ? '<div class="btn-row"><button class="btn btn-primary" data-action="tab" data-tab="plan">' +
         (c.d.pending.some(function (p) { return p.type === '수정안'; }) ? '수정안 보기' : '제안 보기') + '</button></div>' : '') +

@@ -205,7 +205,7 @@
   TOOL_PAGES.scenario = function (c) {
     var list = c.view.scn || defaultScenarios(c);
     var T = P.scenarios.SCENARIO_TYPES;
-    var form = '<form data-submit="scenario-run">' + ui.table(['비교', '충격', '시작월', '기간(개월, 0=끝까지)', '크기', '기간 중 대응'], list.map(function (s, i) {
+    var form = '<form data-submit="scenario-run">' + ui.table(['비교', '충격', '시작월', '기간(개월)', '크기', '기간 중 대응'], list.map(function (s, i) {
       var t = T[s.type];
       var val = PCT_TYPES[s.type] ? Math.round(s.value * 1000) / 10 : s.value;
       return [
@@ -213,12 +213,12 @@
         { html: '<strong>' + t.label + '</strong>', cls: 'l' },
         { html: t.needsStart ? '<input type="month" name="start' + i + '" value="' + ui.esc(s.start) + '" aria-label="' + t.label + ' 시작월">' : '—' },
         { html: t.needsMonths ? '<input type="number" min="0" name="months' + i + '" value="' + ui.esc(s.months) + '" aria-label="' + t.label + ' 기간">' : '—' },
-        { html: '<input type="number" step="0.1" name="value' + i + '" value="' + ui.esc(val) + '" aria-label="' + t.label + ' ' + t.valueLabel + '"> <span class="small muted">' + t.valueLabel + '(' + t.unit + ')</span>' },
+        { html: '<div class="scn-cell"><input class="scn-in" type="number" step="0.1" name="value' + i + '" value="' + ui.esc(val) + '" aria-label="' + t.label + ' ' + t.valueLabel + '"><span class="small muted">' + t.valueLabel + '(' + t.unit + ')</span></div>' },
         { html: (s.type === 'incomeDrop' || s.type === 'jobLoss')
-          ? '<input type="number" min="0" step="1" style="width:6em" name="living' + i + '" value="' + ui.esc(s.living || '') + '" placeholder="그대로" aria-label="' + t.label + ' 기간 생활비"> <span class="small muted">생활비(만원)</span><br><label class="small"><input type="checkbox" name="pp' + i + '"' + (s.pausePension ? ' checked' : '') + '> 연금 납입 중지</label>'
+          ? '<div class="scn-cell"><label class="scn-row"><span class="small muted">생활비</span><input class="scn-in sm" type="number" min="0" step="1" name="living' + i + '" value="' + ui.esc(s.living || '') + '" placeholder="그대로" aria-label="' + t.label + ' 기간 생활비"><span class="small muted">만원</span></label><label class="small scn-row"><input type="checkbox" name="pp' + i + '"' + (s.pausePension ? ' checked' : '') + '> 연금 납입 중지</label></div>'
           : '—' }
       ];
-    }), { caption: '충격 시나리오 입력', maxHeight: 'none' }) + '<div class="btn-row"><button class="btn btn-primary" type="submit">선택한 시나리오로 비교</button></div></form>';
+    }), { caption: '충격 시나리오 입력', maxHeight: 'none' }).replace('<table class="data">', '<table class="data scn-table">') + '<p class="small muted">기간 0 = 시작월부터 이사월까지 계속.</p>' + '<div class="btn-row"><button class="btn btn-primary" type="submit">선택한 시나리오로 비교</button></div></form>';
     var r = P.scenarios.compare(c.state, c.state.activePlanId, list, eo(c));
     var tm = r.base.input.targetMonth;
     var b = engine.rowAt(r.base, tm);
@@ -274,7 +274,7 @@
       return '<section class="card"><p class="conclusion">실행 기준 계획에는 정책상품을 <strong>기본 주거재원으로 넣지 않았습니다.</strong></p>' +
         '<p class="small">지원율이 높아도 가입 가능성, 납입 가능액, 만기일, 중도해지 조건이 자금 사용 시점(' + ui.esc(c.d.plan.targetMonth) + ')과 맞을 때만 재원으로 넣습니다. 다음 달 가입을 가정한 결과입니다.</p>' +
         ui.table(['상품', '가입 조건', '만기(다음 달 가입 시)', '목표일 재원', '확인일'], cand.map(function (x) {
-          return [{ html: ui.esc(x.name), cls: 'l' }, { html: ui.badge(x.eligibility.status) }, '<span class="num">' + ui.esc(x.maturity) + '</span>',
+          return [{ html: ui.esc(x.name), cls: 'l' }, { html: ui.badge(x.eligibility.status) }, { html: '<span class="num">' + ui.esc(x.maturity) + '</span>' },
             { html: x.targetFunding ? ui.badge('목표일 전 만기', 'ok') : ui.badge('목표일 재원 아님', 'warn') }, ui.esc(x.checkedAt)];
         }), { caption: '정책상품 적합성' }) +
         '<p class="small muted">청년미래적금: 신청 이력이 없고, 총급여·재직 연차만으로 우대형(12%)을 확정할 수 없으며(가구소득·심사 필요), 지금 가입해도 만기가 목표일보다 늦습니다. 재직자 우대 저축공제: 회사 참여와 지원비율이 확인되지 않았습니다. 이사 후 장기목표로 다시 검토합니다(사례 보고서 9장).</p></section>';
