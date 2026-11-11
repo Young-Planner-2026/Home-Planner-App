@@ -235,7 +235,14 @@
         var h = Math.max(1, Math.abs(y(v) - zero));
         svg.push('<rect x="' + bx.toFixed(1) + '" y="' + top.toFixed(1) + '" width="' + w.toFixed(1) + '" height="' + h.toFixed(1) + '" rx="2" fill="' +
           (g.hatch ? 'url(#hatch-' + fig.getAttribute('data-chart') + '-' + gi + ')' : 'var(' + g.color + ')') + '" stroke="var(' + g.color + ')" stroke-width="1.5"/>');
-        if (w >= 26) svg.push('<text x="' + (bx + w / 2).toFixed(1) + '" y="' + (top - 5).toFixed(1) + '" text-anchor="middle" font-size="11" fill="var(--text)" stroke="var(--surface)" stroke-width="3" paint-order="stroke">' + fmt.short(v) + '</text>');
+        if (w >= 26) {
+          // 값 글자가 목표선과 겹치면 막대 안쪽(흰 글자)으로 옮긴다
+          var ty0 = spec.target && isNum(spec.target.value) ? y(spec.target.value) : -999;
+          var inside = Math.abs((top - 9) - ty0) < 12 && h > 26;
+          svg.push(inside
+            ? '<text x="' + (bx + w / 2).toFixed(1) + '" y="' + (top + 16).toFixed(1) + '" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">' + fmt.short(v) + '</text>'
+            : '<text x="' + (bx + w / 2).toFixed(1) + '" y="' + (top - 5).toFixed(1) + '" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text)" stroke="var(--surface)" stroke-width="3" paint-order="stroke">' + fmt.short(v) + '</text>');
+        }
       });
     });
     if (spec.target && isNum(spec.target.value)) {
@@ -494,16 +501,32 @@
     var goal = A.input.goal;
     var need = goal.depositTarget + goal.movingCost;
     var gap = function (r) { return r ? r.usable - need : null; };
-    var card = function (lbl, r) {
-      var g = gap(r);
-      return ui.kpi(lbl + ' 목표 대비', isNum(g) ? '<span class="num ' + (g >= 0 ? 'up' : 'down') + '">' + (g >= 0 ? '여유 ' : '부족 ') + fmt.num1(Math.abs(g)) + '<small>만원</small></span>' : '—');
-    };
-    var ymShort = function (m) { return m ? m.slice(2).replace('-', '.') : '—'; };
-    var when = function (m, bal) { return m ? ymShort(m) : (isNum(bal) && bal > 0.05 ? '기간 안에 못 갚음' : '대출 없음'); };
-    var reach = function (res) {
+    var ymShort = function (m) { return m ? m.slice(0, 4) + '.' + m.slice(5, 7) : null; };
+    var reachM = function (res) {
       var e = (res.events || []).filter(function (x) { return x.type === 'emergencyReached'; })[0];
-      return e ? ymShort(e.month) : '기간 안에 못 채움';
+      return e ? e.month : null;
     };
+    // 한 줄 = [항목, 설계 전 글자, 설계 후 글자, 설계 전 상태, 설계 후 상태]
+    var gapTxt = function (r) {
+      var g = gap(r);
+      if (!isNum(g)) return ['—', 'muted'];
+      return [(g >= 0 ? '여유 ' : '부족 ') + fmt.num1(Math.abs(g)) + '만원', g >= 0 ? 'ok' : 'bad'];
+    };
+    var monthTxt = function (m, none, noneBad) { return m ? [ymShort(m), 'ok'] : [none, noneBad ? 'bad' : 'muted']; };
+    var bDebtM = B.payoff && (B.payoff.high || B.payoff.all), aDebtM = A.payoff && (A.payoff.high || A.payoff.all);
+    var bHasDebt = isNum(b && b.debtTotal) && b.debtTotal > 0.05, aHasDebt = isNum(a && a.debtTotal) && a.debtTotal > 0.05;
+    var lines = [
+      ['목표(' + fmt.short(need) + '만원) 대비'].concat(gapTxt(b), gapTxt(a)),
+      ['이자 높은 대출 다 갚는 달'].concat(monthTxt(bDebtM, bHasDebt ? '기간 안에 못 갚음' : '대출 없음', bHasDebt), monthTxt(aDebtM, aHasDebt ? '기간 안에 못 갚음' : '대출 없음', aHasDebt)),
+      ['비상금 ' + fmt.short(goal.emergencyTarget) + '만원 채우는 달'].concat(monthTxt(reachM(B), '기간 안에 못 채움', true), monthTxt(reachM(A), '기간 안에 못 채움', true))
+    ];
+    var ICON = { ok: '✓', bad: '✕', muted: '·' };
+    var cmpList = '<ul class="ba-list" aria-label="설계 전과 후 비교">' + lines.map(function (l) {
+      return '<li><div class="ba-k">' + ui.esc(l[0]) + '</div><div class="ba-v">' +
+        '<span class="ba-b s-' + l[2] + '"><span class="ba-tag">전</span>' + ui.esc(l[1]) + '</span>' +
+        '<span class="ba-arrow" aria-hidden="true">→</span>' +
+        '<span class="ba-a s-' + l[4] + '"><span class="ba-tag">후</span><span aria-hidden="true">' + ICON[l[4]] + '</span> ' + ui.esc(l[3]) + '</span></div></li>';
+    }).join('') + '</ul>';
     return ui.chart({
       type: 'bar',
       title: ui.ymText(tm) + ' 설계 전·후 주거재원',
@@ -513,10 +536,7 @@
       summary: '<p>' + ui.esc(ui.ymText(tm)) + ' 말 기준 · 설계 전 ' + moneyText(b && b.usable) + ' → 설계 후 ' + moneyText(a && a.usable) + ' (목표 ' + fmt.num1(need) + '만원)</p>',
       note: '계획값 기준(실행 기록 반영 전). 설계 전 「' + ui.esc(bp.name) + '」, 설계 후 「' + ui.esc(ap.name) + '」.'
     }) +
-      '<div class="kpis k4 ba-cards">' + card('설계 전', b) + card('설계 후', a) +
-      ui.kpi('이자 높은 대출 다 갚는 달', '<span class="num">' + when(B.payoff && (B.payoff.high || B.payoff.all), b && b.debtTotal) + ' → ' + when(A.payoff && (A.payoff.high || A.payoff.all), a && a.debtTotal) + '</span>', '설계 전 → 후') +
-      ui.kpi('비상금 목표 채우는 달', '<span class="num">' + reach(B) + ' → ' + reach(A) + '</span>', '목표 ' + fmt.short(goal.emergencyTarget) + '만원') +
-      '</div>';
+      cmpList;
   };
 
   /** 충격 시나리오: 기본안과 선택한 시나리오 하나 */

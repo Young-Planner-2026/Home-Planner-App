@@ -9,7 +9,7 @@
   var ui = P.ui;
   var dates = P.dates;
 
-  var VIEW_KEY = 'jaemu-planner-view';
+  var VIEW_KEY = 'jaemu-planner-app-view';
   var app = (ui.app = {
     store: null,
     state: null,

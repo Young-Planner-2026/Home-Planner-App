@@ -471,3 +471,19 @@ form.wizard:not([data-step="5"]) .intake-submit .btn-primary, form.wizard:not([d
 .flow .ft { font-weight: 700; }
 .flow .fs { font-size: 0.86rem; color: var(--muted); }
 .flow .todo .ft { color: var(--muted); font-weight: 600; }
+
+/* 설계 전 → 후 비교 목록(좁은 화면에서도 글자가 잘리지 않게 줄바꿈) */
+.ba-list { list-style: none; margin: 12px 0 0; padding: 0; border-top: 1px solid var(--border); }
+.ba-list li { padding: 10px 0; border-bottom: 1px solid var(--border); display: grid; gap: 6px; }
+.ba-k { font-size: 0.86rem; color: var(--muted); }
+.ba-v { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-variant-numeric: tabular-nums; }
+.ba-b, .ba-a { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; }
+.ba-b { color: var(--muted); font-weight: 600; }
+.ba-a { font-size: 1.05rem; }
+.ba-tag { font-size: 0.7rem; font-weight: 700; padding: 1px 6px; border-radius: 999px; background: var(--surface-2, #f1f3f6); border: 1px solid var(--border); color: var(--muted); }
+.ba-arrow { color: var(--faint); }
+.ba-a.s-ok { color: var(--ok); } .ba-a.s-bad { color: var(--bad); }
+.ba-b.s-bad { color: var(--bad); opacity: .75; }
+@media (min-width: 720px) {
+  .ba-list li { grid-template-columns: minmax(0, 220px) 1fr; align-items: center; }
+}

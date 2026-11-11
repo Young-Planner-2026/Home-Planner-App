@@ -253,8 +253,8 @@
     return true;
   }
 
-  var PREV_KEY = 'jaemu-planner-previous';
-  var DRAFT_KEY = 'jaemu-planner-draft';
+  var PREV_KEY = 'jaemu-planner-app-previous';
+  var DRAFT_KEY = 'jaemu-planner-app-draft';
 
   function readJSON(key) {
     try { var raw = root.localStorage.getItem(key); return raw ? JSON.parse(raw) : null; } catch (e) { return null; }
@@ -370,7 +370,7 @@
     'start-over': function () {
       // 지우기 전에 지금 상태를 백업 키에 남긴다(실수 방지)
       var a = app();
-      try { root.localStorage.setItem('jaemu-planner-before-start-over', JSON.stringify(a.state)); } catch (e) { /* 무시 */ }
+      try { root.localStorage.setItem('jaemu-planner-app-before-start-over', JSON.stringify(a.state)); } catch (e) { /* 무시 */ }
       a.store.clear();
       a.state = null;
       a.d = null;

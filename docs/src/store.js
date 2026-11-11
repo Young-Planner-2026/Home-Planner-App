@@ -12,8 +12,9 @@
   var demo = isNode ? require('../data/demo.js') : root.Planner.demo;
   var intake = isNode ? require('./intake.js') : root.Planner.intake;
 
-  var STORAGE_KEY = 'jaemu-planner';
-  var BACKUP_KEY = 'jaemu-planner-corrupt-backup';
+  // 같은 github.io 주소의 예전 사이트(Home-planner)와 저장값이 섞이지 않도록 이름을 따로 쓴다
+  var STORAGE_KEY = 'jaemu-planner-app';
+  var BACKUP_KEY = 'jaemu-planner-app-corrupt-backup';
   var SCHEMA_VERSION = 1;
 
   var RECORD_ITEMS = {

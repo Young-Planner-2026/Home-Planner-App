@@ -9,7 +9,7 @@
   var ui = P.ui;
   var fmt = P.format;
 
-  var SEEN_KEY = 'jaemu-planner-tour-seen';
+  var SEEN_KEY = 'jaemu-planner-app-tour-seen';
 
   function cond(j, k) { return j.conditions.filter(function (x) { return x.key === k; })[0]; }
 
