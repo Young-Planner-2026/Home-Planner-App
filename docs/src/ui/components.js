@@ -81,6 +81,26 @@
       '<button class="btn" data-action="reset-demo-confirm">설계 예시로 되돌리기</button></div></div>';
   }
 
+  /**
+   * 연·월 고르기(목록). 직접 입력하는 칸은 브라우저마다 '13월' 같은 값이 들어갈 수 있어 목록으로만 고른다.
+   * o: { id, name, value, min, max, label(aria), cls }
+   */
+  function monthSelect(o) {
+    var D = P.dates;
+    var v = o.value || o.min;
+    var lo = D.parseYM(o.min), hi = D.parseYM(o.max), cur = D.parseYM(v);
+    if (Number.isFinite(cur)) { lo = Math.min(lo, cur); hi = Math.max(hi, cur); }
+    var html = '<select class="month-select' + (o.cls ? ' ' + o.cls : '') + '"' + (o.id ? ' id="' + esc(o.id) + '"' : '') + ' name="' + esc(o.name) + '"' + (o.label ? ' aria-label="' + esc(o.label) + '"' : '') + '>';
+    var year = null;
+    for (var t = lo; t <= hi; t++) {
+      var ym = D.formatYM(t);
+      var y = ym.slice(0, 4);
+      if (y !== year) { if (year !== null) html += '</optgroup>'; html += '<optgroup label="' + y + '년">'; year = y; }
+      html += '<option value="' + ym + '"' + (ym === v ? ' selected' : '') + '>' + y + '년 ' + Number(ym.slice(5, 7)) + '월</option>';
+    }
+    return html + (year !== null ? '</optgroup>' : '') + '</select>';
+  }
+
   function kpi(label, valueHtml, sub) {
     return '<div class="kpi"><div class="label">' + label + '</div><div class="value">' + valueHtml + '</div>' +
       (sub ? '<div class="sub">' + sub + '</div>' : '') + '</div>';
@@ -117,7 +137,7 @@
   function n1(x) { return { html: '<span class="num">' + fmt.num1(x) + '</span>' }; }
 
   Object.assign(ui, {
-    table: table, n1: n1,
+    table: table, n1: n1, monthSelect: monthSelect,
     esc: esc, badge: badge, metaOf: metaOf, money: money, delta: delta, help: help, fold: fold,
     empty: empty, errorBox: errorBox, kpi: kpi, ymText: ymText, judgementBadge: judgementBadge, GLOSSARY: GLOSSARY
   });

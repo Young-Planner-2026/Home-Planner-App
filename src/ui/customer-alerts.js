@@ -68,7 +68,7 @@
   ui.alertDemoBanner = function (c) {
     if (!c.state.alertDemo) return '';
     return '<section class="card demo-banner" role="status"><div class="card-head"><h2>알림 예시를 보고 있어요</h2>' + ui.badge('예시', 'warn') + '</div>' +
-      '<p class="small">' + c.state.alertDemo.months.join(', ') + ' 석 달 치 가상 기록을 넣고, 오늘을 ' + ui.esc(c.state.demoToday) + '로 옮긴 상태예요. 알림 · 홈 · 내 계획(수정안) · 기록 탭을 둘러보세요.</p>' +
+      '<p class="small">' + c.state.alertDemo.months.join(', ') + ' 석 달 치 가상 기록을 넣고, 오늘을 ' + ui.esc(c.state.demoToday) + '로 옮긴 상태예요. ' + (c.view.role === 'planner' ? '설계사 화면의 경보·수정안 · 실행 기록·예측, 고객 화면의 알림 · 내 계획(수정안 적용)을 오가며 보세요.' : '알림 · 홈 · 내 계획(수정안) · 기록 탭을 둘러보세요.') + '</p>' +
       '<div class="btn-row"><button class="btn btn-primary" data-action="alert-demo-end">예시 끝내고 원래대로 돌아가기</button></div></section>';
   };
 

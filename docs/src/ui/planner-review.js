@@ -50,7 +50,11 @@
   pages.alerts = function (c) {
     var alerts = (c.state.alerts || []).slice().reverse();
     var revs = (c.state.proposals || []).filter(function (p) { return p.type === '수정안'; }).reverse();
+    var intro = c.state.alertDemo ? '' : '<section class="card"><div class="card-head"><h2>경보 예시로 보기</h2>' + ui.badge('시연', 'info') + '</div>' +
+      '<p class="small">아직 고객 기록이 없어 경보가 없습니다. 석 달 치 가상 기록(생활비 2개월 연속 초과, 3개월째 실수령 −12.5%)을 넣어 경보 → 수정안 → 고객 확인 흐름을 볼 수 있습니다. 지금 정보는 따로 보관했다가 그대로 되돌립니다.</p>' +
+      '<div class="btn-row"><button class="btn btn-primary" data-action="alert-demo-start">경보 예시 만들기</button></div></section>';
     return ui.pageHead('경보·수정안', '같은 상황의 경보는 한 번만, 수정안은 경보 하나에만 연결됩니다.') +
+      (ui.alertDemoBanner ? ui.alertDemoBanner(c) : '') + (alerts.length ? '' : intro) +
       '<section class="card"><h2>경보</h2>' + (alerts.length ? ui.table(['경보', '수준', '상태', '발생', '내용', '연결 수정안'], alerts.map(function (a) {
         var prop = a.proposalId ? St.findProposal(c.state, a.proposalId) : null;
         return [{ html: '<strong>' + ui.esc(a.title) + '</strong>', cls: 'l' }, { html: ui.badge(a.severity) }, { html: ui.badge(a.status) }, a.createdAt || '—',

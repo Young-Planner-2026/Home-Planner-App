@@ -57,7 +57,7 @@
         '<div class="field"><label for="sp-name">이름</label><input id="sp-name" name="name" type="text" placeholder="예: 11월 카드대금" required></div>' +
         '<div class="grid-2"><div class="field"><label for="sp-amt">금액(만원)</label><input id="sp-amt" name="amount" type="number" min="0" step="0.1" required></div>' +
         '<div class="field"><label for="sp-kind">구분</label><select id="sp-kind" name="kind"><option>선택</option><option>필수</option></select></div></div>' +
-        '<div class="field"><label for="sp-month">어느 달 지출분인가요?</label><input id="sp-month" name="spendMonth" type="month" value="' + ui.esc(c.d.month) + '"></div>' +
+        '<div class="field"><label for="sp-month">어느 달 지출분인가요?</label>' + ui.monthSelect({ id: 'sp-month', name: 'spendMonth', value: c.d.month, min: P.dates.addMonths(c.d.month, -12), max: P.dates.addMonths(c.d.month, 3) }) + '</div>' +
         '<button class="btn btn-block" type="submit">추가</button></form>');
   }
 

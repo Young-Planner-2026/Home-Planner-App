@@ -65,7 +65,7 @@
         (err ? '<p class="err" id="' + id + '-e"><span aria-hidden="true">!</span> ' + esc(err) + '</p>' : '') + '</div>';
     }).join('');
     return '<fieldset class="living"><legend>월 생활비 <span class="req">필수(1개 이상)</span></legend>' +
-      '<p class="hint">한 달에 쓰는 돈을 항목마다 적어 주세요(단위 만원/월, 예: 식비 60). 줄이기 어려운 지출은 ‘필수’에 표시하세요. 없는 항목은 0, 모르는 항목은 비워 두세요(미확인).</p>' +
+      '<p class="hint">한 달에 쓰는 돈을 항목마다 적어 주세요(단위 만원/월, 예: 식비 60). ‘부모님께 드리는 돈’은 지출이에요(받는 돈은 소득에 넣어 주세요). 줄이기 어려운 지출은 ‘필수’에 표시하세요. 없는 항목은 0, 모르는 항목은 비워 두세요(미확인).</p>' +
       rows + '<p class="lv-total" aria-live="polite">합계 <strong id="lv-sum">' + fmt.num1(total) + '</strong>만원/월' + (unknown ? ' <span class="muted">(미확인 ' + unknown + '개 제외)</span>' : '') + '</p></fieldset>';
   }
 
@@ -97,8 +97,8 @@
 
   // 입력 화면 모드: new(새 고객) · review(기존 정보 확인하고 계속하기) · edit(고객정보 수정)
   var MODE = {
-    new: { title: '나의 재무상태 자가진단', submit: '자가진단 완료하고 시작하기',
-      lead: '내 상황을 직접 입력하는 화면이에요. 다 입력하고 아래 [자가진단 완료하고 시작하기]를 누르면 저장한 뒤 고객용·설계사용 화면을 고를 수 있어요.' },
+    new: { title: '나의 재무상태 자가진단', submit: '자가진단 완료하고 설계사에게 보내기',
+      lead: '고객 화면의 첫 단계예요. 5단계(기본정보 → 소득·지출 → 자산·부채 → 목표 → 선호)를 입력하고 저장하면, 설계사 화면에서 이 정보로 진단과 설계를 시작해요. 필수 칸만 채워도 저장할 수 있어요.' },
     review: { title: '나의 재무상태 자가진단 · 기존 정보 확인', submit: '확인하고 계속하기',
       lead: '저장해 둔 정보예요. 내용을 확인하고(필요하면 고친 뒤) [확인하고 계속하기]를 누르면 화면 선택으로 넘어가요.' },
     edit: { title: '고객정보 수정', submit: '수정 완료',
@@ -177,14 +177,14 @@
         '<p class="small muted">사생활 보호(시크릿) 모드이거나 저장 공간이 가득 찼을 수 있어요. 일반 창에서 다시 열거나 저장 공간을 비운 뒤 [다시 저장]을 눌러 주세요.</p></div></div>'
       : '';
     var cancel = mode === 'edit' ? '<button class="btn btn-sm" data-action="intake-cancel">수정 취소</button>'
-      : a.state ? '<button class="btn btn-sm" data-action="go-welcome">처음 화면으로</button>' : '';
+      : '<button class="btn btn-sm" data-action="intake-cancel">처음 화면</button>';
     var newWithOld = mode === 'new' && a.state
       ? '<div class="notice info"><span aria-hidden="true">i</span><p>새 고객 자가진단이에요. 기존 고객(' + esc((a.state.customer || {}).name || '') + ') 정보는 지우지 않았어요. 새 자가진단을 저장하면 기존 정보는 이 브라우저에 백업되고, 화면 선택 → 데이터에서 되돌릴 수 있어요.</p></div>'
       : '';
     return '<header class="topbar"><div class="topbar-inner"><div class="brand">재무플래너</div>' + cancel + '</div>' +
       '<div class="demo-note">' + (example ? '가상 고객 데이터(설계 예시)를 입력칸에 채웠어요. 실제 고객이 아닙니다.' : '입력한 정보는 이 기기의 브라우저에만 저장돼요. 다른 기기와 자동으로 공유되지 않아요.') + '</div></header>' +
       '<main class="intake-main" id="main">' + (ui.importConfirm ? ui.importConfirm() : '') +
-      '<section class="card intake-intro"><h1 tabindex="-1">' + esc(m.title) + '</h1>' +
+      '<section class="card intake-intro">' + (mode === 'new' ? '<span class="cc-tag">고객 화면 · 1단계</span>' : '') + '<h1 tabindex="-1">' + esc(m.title) + '</h1>' +
       '<p>' + esc(m.lead) + '</p>' + newWithOld +
       '<ul class="legend-list small"><li><span class="req">필수</span> 꼭 입력 · <span class="opt">선택</span> 모르면 비워 두기</li><li>빈 칸은 <strong>미확인</strong>, 실제로 없으면 <strong>0</strong>을 입력 · 금액 단위는 <strong>만원</strong>(100만원 → 100)</li></ul>' +
       '<div class="btn-row"><button class="btn" data-action="intake-example">설계 예시 불러오기</button>' +
@@ -195,7 +195,7 @@
       '<form id="intake-form" class="' + (wizAll ? '' : 'wizard') + '" data-step="' + wizStep + '" data-submit="intake-save" novalidate>' +
       '<input type="hidden" name="_source" value="' + esc(source) + '">' +
       '<div class="intake-grid">' + I.SECTIONS.map(function (sec) { return section(sec.key, values, errors); }).join('') + '</div>' +
-      '<p class="small muted intake-submit-note">[' + esc(m.submit) + ']를 누르면 ① 필수 입력과 숫자 범위를 확인하고 ② 고객정보와 자가진단 응답을 이 기기에 저장한 뒤 ③ 저장에 성공했을 때만 화면 선택으로 넘어가요.</p>' +
+      '<p class="small muted intake-submit-note">[' + esc(m.submit) + ']를 누르면 ① 필수 입력과 숫자 범위를 확인하고 ② 고객정보와 자가진단 응답을 이 기기에 저장한 뒤 ③ 저장에 성공했을 때만 다음 화면으로 넘어가요.</p>' +
       '<div class="wiz-nav"><button class="btn wiz-prev" type="button" data-wnav="-1">이전</button><button class="btn btn-primary wiz-next" type="button" data-wnav="1">다음</button></div>' +
       '<div class="intake-submit"><button class="btn btn-primary btn-block" type="submit">' + esc(m.submit) + '</button>' +
       '<button class="btn btn-sm wiz-all" type="button" data-wall>' + (wizAll ? '단계별로 보기' : '한 화면에 모두 보기') + '</button></div>' +
@@ -299,8 +299,9 @@
     },
     'intake-cancel': function () {
       var a = app();
-      var back = a.view.intakeReturn || { screen: 'choose' };
-      rerender({ screen: back.screen === 'intake' ? 'choose' : back.screen || 'choose', role: back.role || a.view.role, intakeDraft: null, intakeErrors: null, intakeSaveError: null, intakeConfirm: false });
+      var back = a.view.intakeReturn || { screen: 'start' };
+      a.view.intakeAfter = null;
+      rerender({ screen: back.screen === 'intake' || !a.state ? 'start' : back.screen || 'start', role: back.role || a.view.role, intakeDraft: null, intakeErrors: null, intakeSaveError: null, intakeConfirm: false });
     },
     'intake-save': function (c, form, fd) {
       var a = app();
@@ -315,7 +316,7 @@
         var r = I.applyEdit(a.state, values, who);
         if (!r.ok) { rerender({ intakeErrors: r.errors }, true); focusFirstError(r.errors); return; }
         var ret = a.view.intakeReturn || { screen: 'choose' };
-        var dest = mode === 'review' ? { screen: 'choose' } : { screen: ret.screen === 'intake' || ret.screen === 'welcome' || !ret.screen ? 'choose' : ret.screen, role: ret.role || a.view.role };
+        var dest = mode === 'review' ? { screen: 'start' } : { screen: ret.screen === 'intake' || ret.screen === 'welcome' || ret.screen === 'choose' || !ret.screen ? 'start' : ret.screen, role: ret.role || a.view.role };
         if (!r.changed.length) {
           // 바뀐 것이 없어도 저장된 상태가 맞는지 다시 써 본다(저장 실패면 넘어가지 않음)
           trySave(a.state, { view: dest, msg: mode === 'review' ? '기존 정보를 확인했어요.' : '바뀐 내용이 없어요.' });
@@ -338,7 +339,11 @@
           return;
         }
       }
-      trySave(s2, { view: { screen: 'choose' }, msg: '자가진단을 저장했어요. 이 기기 브라우저에만 저장됩니다.' });
+      var after = a.view.intakeAfter;
+      a.view.intakeAfter = null;
+      trySave(s2, after
+        ? { view: after, msg: '자가진단을 저장했어요. 설계사 화면에서 이 정보로 진단과 설계를 시작할 수 있어요(이 기기 안에서 공유).' }
+        : { view: { screen: 'start' }, msg: '자가진단을 저장했어요. 이 기기 브라우저에만 저장됩니다.' });
     },
     'intake-retry-save': function () {
       var a = app();
@@ -347,8 +352,8 @@
 
     /* 화면 선택 */
     'choose-role': function (c, el) { ui.setView({ screen: 'main', role: el.getAttribute('data-role') }); },
-    'go-choose': function () { ui.setView({ screen: 'choose' }); },
-    'go-welcome': function () { rerender({ screen: 'welcome', intakeDraft: null, intakeErrors: null, intakeSaveError: null, intakeConfirm: false }); },
+    'go-choose': function () { var a = app(); a.view.startMode = null; ui.setView({ screen: 'start', confirm: null }); },
+    'go-welcome': function () { rerender({ screen: 'start', intakeDraft: null, intakeErrors: null, intakeSaveError: null, intakeConfirm: false }); },
     'continue-existing': function () { ui.openIntake('review'); },
     'new-customer': function () { ui.openIntake('new'); },
     'restore-prev-confirm': function () { ui.setView({ confirm: 'restore-prev' }, true); },
@@ -362,7 +367,7 @@
       try { root.localStorage.setItem(PREV_KEY, JSON.stringify({ savedAt: new Date().toISOString(), state: cur })); } catch (e) { /* 무시 */ }
       a.state = b.state;
       a.d = null;
-      rerender({ screen: 'choose', confirm: null });
+      rerender({ screen: 'start', confirm: null });
       ui.toast('이전 고객 정보로 되돌렸어요. 방금까지의 정보는 백업으로 바꿔 두었어요.');
     },
     'edit-info': function () { ui.openIntake('edit'); },
@@ -374,8 +379,8 @@
       a.store.clear();
       a.state = null;
       a.d = null;
-      rerender({ screen: 'intake', intakeMode: 'new', intakeDraft: null, intakeErrors: null, intakeSource: null, confirm: null });
-      ui.toast('처음부터 입력해요. 지운 데이터는 이 브라우저에 백업해 두었어요.');
+      rerender({ screen: 'start', startMode: null, intakeDraft: null, intakeErrors: null, intakeSource: null, confirm: null });
+      ui.toast('처음부터 다시 시작해요. 지운 데이터는 이 브라우저에 백업해 두었어요.');
     },
     'review-dismiss': function (c) {
       var s = JSON.parse(JSON.stringify(c.state));

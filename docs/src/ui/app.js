@@ -154,7 +154,7 @@
       '<div class="seg" role="group" aria-label="보는 화면 바꾸기(화면 모드)">' +
       '<button data-action="role" data-role="customer" aria-pressed="' + (role === 'customer') + '">고객용</button>' +
       '<button data-action="role" data-role="planner" aria-pressed="' + (role === 'planner') + '">설계사용</button></div>' +
-      '<div class="topbar-actions"><button class="btn btn-sm" data-action="go-choose"><span class="lbl-long">화면 선택으로 돌아가기</span><span class="lbl-short" aria-hidden="true">화면 선택</span></button>' +
+      '<div class="topbar-actions"><button class="btn btn-sm" data-action="go-choose"><span class="lbl-long">처음 화면</span><span class="lbl-short" aria-hidden="true">처음</span></button>' +
       '<button class="btn btn-sm" data-action="edit-info"><span class="lbl-long">고객정보 수정</span><span class="lbl-short" aria-hidden="true">정보 수정</span></button></div>' +
       '<div class="context-line"><span>고객 <strong>' + ui.esc(s.customer.name || '이름 없음') + '</strong>' + (s.customer.isExample ? ' ' + ui.badge('가상 고객', 'info') : '') + '</span>' +
       '<span class="ctx-plan">실행 기준 <strong>' + ui.esc(c.d.plan ? c.d.plan.name : '없음') + '</strong></span>' +
@@ -207,24 +207,26 @@
     var c;
     if (ui.chartReset) ui.chartReset();
     try {
-      if (!app.state || app.view.screen === 'intake') {
+      if (app.view.screen === 'intake') {
         if (!app.state) app.view.intakeMode = 'new';
         el.className = 'intake-view';
         el.innerHTML = ui.intakeScreen();
         return;
       }
+      // 첫 화면: ① 사례 적용 / 직접 입력 ② 고객 화면 / 설계사 화면
+      if (!app.state || app.view.screen === 'start' || app.view.screen === 'welcome' || app.view.screen === 'choose') {
+        if (!app.state && app.view.screen !== 'wait') app.view.screen = 'start';
+        if (app.view.screen === 'wait') { el.className = 'choose-view'; el.innerHTML = ui.waitScreen(); return; }
+        el.className = 'choose-view';
+        el.innerHTML = ui.startScreen() + (app.state ? footer(ctx()) : '');
+        return;
+      }
+      if (app.view.screen === 'wait') {
+        el.className = 'choose-view';
+        el.innerHTML = ui.waitScreen();
+        return;
+      }
       c = ctx();
-      if (app.view.screen === 'welcome') {
-        el.className = 'choose-view';
-        el.innerHTML = ui.welcomeScreen(c) + footer(c);
-        return;
-      }
-      if (app.view.screen === 'choose') {
-        el.className = 'choose-view';
-        el.innerHTML = ui.chooseScreen(c) + footer(c);
-        if (ui.mountCharts) ui.mountCharts();
-        return;
-      }
       el.className = (c.view.role === 'customer' ? 'customer-view' : 'planner-view') + (c.view.tour !== null && c.view.tour !== undefined ? ' tour-on' : '');
       el.innerHTML = header(c) + staleNotice() + (ui.importConfirm ? ui.importConfirm() : '') + (ui.reviewBanner ? '<div class="review-wrap">' + ui.reviewBanner(c) + '</div>' : '') +
         (c.view.role === 'customer' ? customerView(c) : plannerView(c)) + footer(c) + (ui.tourPanel ? ui.tourPanel(c) : '');
@@ -245,7 +247,7 @@
   function renderNav() {
     render();
     var n = navOf(app.view);
-    if (!app.state) n = { screen: 'intake', role: app.view.role, intakeMode: 'new' };
+    if (!app.state && n.screen !== 'intake' && n.screen !== 'wait') n = { screen: 'start', role: app.view.role };
     var key = navKey(n);
     if (lastNav === key) return;
     var first = lastNav === null;
@@ -270,7 +272,7 @@
     root.addEventListener('popstate', function (e) {
       var n = e.state && e.state.nav;
       if (!n) return;
-      if (!app.state) n = { screen: 'intake', intakeMode: 'new', role: app.view.role };
+      if (!app.state && n.screen === 'main') n = { screen: 'start', role: app.view.role };
       app.view.screen = n.screen;
       if (n.role) app.view.role = n.role;
       if (n.screen === 'intake') {
@@ -347,11 +349,10 @@
       s = P.alerts.syncAlerts(s).state;
       app.state = s;
       app.store.save(s); // 예전 저장본은 이전된 형식으로 다시 저장(삭제하지 않음)
-      app.view.screen = 'welcome'; // 다시 실행: 기존 정보로 계속 / 새 고객 시작 선택
+      app.view.screen = 'start'; // 첫 화면: 사례/직접 입력 고르고 고객/설계사 화면 선택
     } else {
       app.state = null;
-      app.view.screen = 'intake'; // 처음 실행: 고객정보 입력부터
-      app.view.intakeMode = 'new';
+      app.view.screen = 'start';
       if (loaded.corrupt) setTimeout(function () { ui.toast('저장된 데이터를 읽지 못했어요. 지우지 않고 백업해 두었어요. 새로 입력하거나 파일을 불러오세요.'); }, 0);
     }
     bindEvents();

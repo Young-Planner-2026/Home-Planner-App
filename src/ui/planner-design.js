@@ -55,7 +55,7 @@
       '<div class="field"><label for="pe-opt">선택지출</label><input id="pe-opt" name="optional" type="number" step="0.1" min="0" value="' + ui.esc(base.optional) + '"></div>' +
       '<div class="field"><label for="pe-ext">월 추가 상환</label><input id="pe-ext" name="extraRepayment" type="number" step="0.1" min="0" value="' + ui.esc(base.extraRepayment) + '"></div>' +
       '<div class="field"><label for="pe-pen">연금 월 납입</label><input id="pe-pen" name="pensionMonthly" type="number" step="1" min="0" value="' + ui.esc(base.pensionMonthly || 0) + '"></div>' +
-      '<div class="field"><label for="pe-tm">이사 예정월</label><input id="pe-tm" name="targetMonth" type="month" value="' + ui.esc(base.targetMonth) + '"></div>' +
+      '<div class="field"><label for="pe-tm">이사 예정월</label>' + ui.monthSelect({ id: 'pe-tm', name: 'targetMonth', value: base.targetMonth, min: base.startMonth, max: P.dates.addMonths(base.targetMonth, 36) }) + '</div>' +
       '<div class="field"><label for="pe-pm">' + ui.esc(prod && prod.name ? prod.name : '청년미래적금') + ' 월 납입(0이면 제외)</label><input id="pe-pm" name="productMonthly" type="number" step="1" min="0"' + (prod && prod.type === 'bank' ? '' : ' max="50"') + ' value="' + (prod ? ui.esc(prod.monthly) : 0) + '"></div>' +
       '<div class="field" style="flex:1 1 260px"><label for="pe-memo">메모(바뀐 이유)</label><input id="pe-memo" name="memo" type="text" value=""></div>' +
       '<div class="btn-row"><button class="btn btn-primary" type="submit">새 안 저장</button><button class="btn" type="button" data-action="plan-edit-cancel">취소</button></div>' +
@@ -160,20 +160,52 @@
 
   var TOOL_PAGES = {};
 
+  /** 이미 달성일 때의 근거: 세 조건의 값·목표·여유, 지급일 기준, 그리고 여유 역산(생활비를 얼마까지 더 써도 되는지) */
+  function metBasis(c, from, floor) {
+    var pid = c.state.activePlanId;
+    var res = engine.runPlan(c.state, pid, eo(c));
+    var j = res.judgement;
+    var tm = res.input.targetMonth;
+    var row = engine.rowAt(res, tm);
+    var unit = function (cd, v) { return cd.key === 'debt' ? '잔액 ' + fmt.num1(v) : fmt.num1(v); };
+    var rows = j.conditions.map(function (cd) {
+      var margin = cd.key === 'debt' ? null : cd.value - cd.target;
+      return [cd.label, { html: '<span class="num">' + unit(cd, cd.value) + '</span>' }, cd.key === 'debt' ? '잔액 0' : fmt.num1(cd.target),
+        { html: cd.key === 'debt' ? (res.payoff && res.payoff.high ? ui.esc(res.payoff.high) + ' 상환 완료' : '—') : '<span class="num up">+' + fmt.num1(margin) + '</span>' },
+        { html: ui.badge(cd.met ? '충족' : '미달', cd.met ? 'ok' : 'bad') }];
+    });
+    var lastIn = row ? Math.max(0, row.housingIn) : 0;
+    var hcd = j.conditions.filter(function (x) { return x.key === 'housing'; })[0];
+    var payday = hcd ? hcd.value - lastIn - hcd.target : null;
+    var sl = P.solver.solveLivingSlack(c.state, pid, { fromMonth: from, engineOpts: eo(c) });
+    var ratio = hcd && hcd.target ? (hcd.value - hcd.target) / hcd.target * 100 : null;
+    return '<h3>판정 근거 — ' + ui.esc(tm) + ' 말, 세 조건 모두 충족</h3>' +
+      ui.table(['조건', '계산값', '목표', '여유', '결과'], rows, { caption: '판정 근거' }) +
+      '<p class="small muted">' + (c.state.assumptions && c.state.assumptions.bankInterestInGoal === false ? '주거자금은 적금 이자를 뺀 원금 기준입니다. ' : '') + '비상금·연금·반환 전 보증금은 주거자금에 넣지 않고, 같은 돈을 두 조건에 겹쳐 세지 않습니다.</p>' +
+      '<div class="kpis k4">' +
+      ui.kpi('주거 여유', '<span class="num">' + (hcd ? fmt.num1(hcd.value - hcd.target) : '—') + '<small>만원</small></span>', ratio !== null ? '목표의 ' + fmt.num1(ratio) + '%' : '') +
+      ui.kpi('마지막 달 적립 전에 쓰면', payday === null ? '—' : '<span class="num ' + (payday >= 0 ? 'up' : 'down') + '">' + (payday >= 0 ? '+' : '−') + fmt.num1(Math.abs(payday)) + '<small>만원</small></span>', ui.esc(tm) + ' 적립 ' + fmt.num1(lastIn) + ' 제외') +
+      ui.kpi('생활비를 더 써도 되는 한도', sl.feasible ? '<span class="num">월 ' + fmt.num1(sl.slack) + '<small>만원</small></span>' : '—', sl.feasible ? ui.esc(sl.fromMonth) + '부터 ' + sl.months + '개월 동안' : '') +
+      ui.kpi('여유 역산 합계', sl.feasible ? ui.money(sl.slack * sl.months) : '—', '한도 × 개월') + '</div>' +
+      '<p class="small">' + (sl.feasible ? ui.esc(sl.fromMonth) + '부터 생활비를 매달 <strong>' + fmt.num1(sl.slack) + '만원</strong>보다 많이 더 쓰면 판정이 미달로 바뀝니다. ' : '') +
+      '여유가 작을수록 계획을 지키는지가 중요하므로, 이 한도를 경보 기준(생활비 초과 허용 %)과 함께 봅니다.</p>';
+  }
+
   TOOL_PAGES.solver = function (c) {
     var from = c.view.solverFrom || c.d.next;
     var floor = c.view.solverFloor || 0.9;
     var opts = { fromMonth: from, essentialFloorRatio: floor, engineOpts: eo(c) };
     var r = P.solver.solveAll(c.state, c.state.activePlanId, opts);
     var lc = r.livingCut;
-    var conclusion = lc.alreadyMet ? '이미 전체 목표를 달성합니다. 줄일 필요가 없습니다.'
+    var conclusion = lc.alreadyMet ? '지금 계획대로면 <strong>전체 목표 달성</strong>이라 생활비를 더 줄일 필요는 없습니다. 근거와 남은 여유는 아래와 같습니다.'
       : lc.feasible ? ui.esc(from) + '부터 생활비를 <strong>월 ' + fmt.num1(lc.cut) + '만원</strong> 줄이면 이사월 판정이 전체 목표 달성으로 바뀝니다.'
         : '<strong>생활비 절감만으로는 목표를 맞출 수 없습니다.</strong> ' + ui.esc(lc.reason);
     return '<section class="card"><form data-submit="solver-run" class="form-inline">' +
-      '<div class="field"><label for="sv-from">절감 시작월</label><input id="sv-from" name="from" type="month" value="' + ui.esc(from) + '"></div>' +
+      '<div class="field"><label for="sv-from">절감 시작월</label>' + ui.monthSelect({ id: 'sv-from', name: 'from', value: from, min: c.d.plan.startMonth, max: c.d.plan.targetMonth }) + '</div>' +
       '<div class="field"><label for="sv-floor">필수생활비 하한</label><select id="sv-floor" name="floor">' + [1, 0.95, 0.9, 0.85].map(function (x) { return '<option value="' + x + '"' + (x === floor ? ' selected' : '') + '>지금의 ' + Math.round(x * 100) + '%</option>'; }).join('') + '</select></div>' +
       '<button class="btn" type="submit">다시 계산</button></form></section>' +
-      '<section class="card"><p class="conclusion">' + conclusion + '</p>' +
+      '<section class="card"><p class="conclusion' + (lc.alreadyMet ? ' ok' : '') + '">' + conclusion + '</p>' +
+      (lc.alreadyMet ? metBasis(c, from, floor) : '') +
       (lc.feasible && !lc.alreadyMet ? '<div class="kpis k4">' +
         ui.kpi('월 절감액(표시값, 0.1 올림)', ui.money(lc.cut), '정확값 ' + fmt.num1(lc.exact)) +
         ui.kpi('선택지출에서', ui.money(lc.optionalCut)) + ui.kpi('필수생활비에서', ui.money(lc.essentialCut), '하한 ' + fmt.num1(lc.floor)) +
@@ -211,7 +243,7 @@
       return [
         { html: '<input type="radio" name="pick" value="' + i + '" aria-label="' + t.label + ' 선택"' + (s.enabled ? ' checked' : '') + '>' },
         { html: '<strong>' + t.label + '</strong>', cls: 'l' },
-        { html: t.needsStart ? '<input type="month" name="start' + i + '" value="' + ui.esc(s.start) + '" aria-label="' + t.label + ' 시작월">' : '—' },
+        { html: t.needsStart ? ui.monthSelect({ name: 'start' + i, value: s.start, min: c.d.plan.startMonth, max: c.d.plan.targetMonth, label: t.label + ' 시작월' }) : '—' },
         { html: t.needsMonths ? '<input type="number" min="0" name="months' + i + '" value="' + ui.esc(s.months) + '" aria-label="' + t.label + ' 기간">' : '—' },
         { html: '<div class="scn-cell"><input class="scn-in" type="number" step="0.1" name="value' + i + '" value="' + ui.esc(val) + '" aria-label="' + t.label + ' ' + t.valueLabel + '"><span class="small muted">' + t.valueLabel + '(' + t.unit + ')</span></div>' },
         { html: (s.type === 'incomeDrop' || s.type === 'jobLoss')
@@ -256,7 +288,7 @@
       }), { caption: '소득 감소 민감도' }) + '</section>' +
       '<section class="card"><h2>초과소득(성과급 등)</h2><form data-submit="bonus-run" class="form-inline">' +
       '<div class="field"><label for="bn-a">금액(만원)</label><input id="bn-a" name="amount" type="number" min="0" step="1" value="' + ui.esc(bonus.amount) + '"></div>' +
-      '<div class="field"><label for="bn-m">받는 달</label><input id="bn-m" name="month" type="month" value="' + ui.esc(bonus.month) + '"></div>' +
+      '<div class="field"><label for="bn-m">받는 달</label>' + ui.monthSelect({ id: 'bn-m', name: 'month', value: bonus.month, min: c.d.plan.startMonth, max: c.d.plan.targetMonth }) + '</div>' +
       '<div class="field"><label for="bn-s">상태</label><select id="bn-s" name="status"><option' + (bonus.status === '예상' ? ' selected' : '') + '>예상</option><option' + (bonus.status === '확정' ? ' selected' : '') + '>확정</option></select></div>' +
       '<button class="btn" type="submit">계산</button></form>' +
       (bonus.status === '예상' ? '<p class="notice info">"예상" 상태의 초과소득은 확정 재원에서 빼고 계산합니다. 확정되면 다시 계산하세요.</p>'
@@ -329,7 +361,7 @@
       '<div class="field"><label for="bk-m">적금 월 납입(만원)</label><input id="bk-m" name="m" type="number" min="1" step="1" value="' + ui.esc(bm) + '"></div>' +
       '<div class="field"><label for="bk-n">기간(개월)</label><input id="bk-n" name="n" type="number" min="1" max="36" step="1" value="' + ui.esc(bn) + '"></div>' +
       '<div class="field"><label for="bk-l">예금 원금(만원)</label><input id="bk-l" name="l" type="number" min="100" step="10" value="' + ui.esc(bl) + '"></div>' +
-      '<div class="field"><label for="bk-s">가입월</label><input id="bk-s" name="s" type="month" value="' + ui.esc(start) + '"></div>' +
+      '<div class="field"><label for="bk-s">가입월</label>' + ui.monthSelect({ id: 'bk-s', name: 's', value: start, min: c.d.plan.startMonth, max: c.d.plan.targetMonth }) + '</div>' +
       '<button class="btn" type="submit">비교</button></form>' +
       ui.table(['상품', '설계상 용도', '적용 금리(기본 / 우대)', '원금', '세후 만기금(기본)', '세후 만기금(우대 충족 시)', '만기', '목표일 재원', '확인일'], rows.map(function (x) {
         if (x.payout === undefined) return [{ html: ui.esc(x.name), cls: 'l' }, { html: ui.esc(x.use), cls: 'l' }, { html: ui.esc(x.note), cls: 'l' }, '—', '—', '—', '—', '—', ui.esc(x.checkedAt)];

@@ -204,6 +204,32 @@
   }
 
   /** 설계 도구 화면용: 역산 결과와 대안 3가지, 참고값을 한 번에 */
+  /**
+   * 여유 역산(이미 달성일 때): 절감 시작월부터 생활비(선택지출)를 매달 얼마까지 더 써도 전체 목표 달성이 유지되는지.
+   * 반대 방향 역산이며, 0.1만원 단위로 내림한다(안전한 쪽).
+   */
+  function solveLivingSlack(state, planId, opts) {
+    opts = opts || {};
+    var plan = findPlan(state, planId);
+    var eo = opts.engineOpts || {};
+    var opt = num(plan.optional);
+    var from = opts.fromMonth && dates.parseYM(opts.fromMonth) > dates.parseYM(plan.startMonth) ? opts.fromMonth : null;
+    function changesFor(x) {
+      if (!from) return { optional: opt + x };
+      var adj = (plan.budgetAdjustments || []).slice();
+      adj.push({ start: from, months: 0, optional: x, essential: 0, grow: true, note: '여유 역산' });
+      return { budgetAdjustments: adj };
+    }
+    function ok(x) { return run(state, planId, merge(eo, { planOverrides: changesFor(x) })).judgement.status === ACHIEVED; }
+    if (!ok(0)) return { feasible: false };
+    var hi = 1;
+    while (ok(hi) && hi < 5000) hi *= 2;
+    var lo = 0;
+    for (var i = 0; i < ITER; i++) { var mid = (lo + hi) / 2; if (ok(mid)) lo = mid; else hi = mid; }
+    var months = (from ? dates.diffMonths(from, plan.targetMonth) : dates.diffMonths(plan.startMonth, plan.targetMonth)) + 1;
+    return { feasible: true, slack: floor1(lo), exact: lo, fromMonth: from || plan.startMonth, months: months };
+  }
+
   function solveAll(state, planId, opts) {
     return {
       livingCut: solveLivingCut(state, planId, opts),
@@ -220,7 +246,8 @@
     solveExtraIncome: solveExtraIncome,
     solveLowerTarget: solveLowerTarget,
     solveDelay: solveDelay,
-    solveAll: solveAll
+    solveAll: solveAll,
+    solveLivingSlack: solveLivingSlack
   };
 
   if (isNode) {

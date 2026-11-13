@@ -176,7 +176,7 @@
    */
   var DEMO = {
     schemaVersion: 1,
-    demoVersion: 5,
+    demoVersion: 6,
     demoToday: '2026-11-03',
     intake: { done: true, source: 'example', savedAt: '2026-11-03' },
     // 자가진단 응답(고객 본인 응답, 공식 투자성향 진단 아님) — 재무 수치(customer)와 따로 둔다
@@ -221,7 +221,7 @@
         { key: 'food', label: '식비·생필품', amount: 60, essential: true },
         { key: 'telecom', label: '통신·구독', amount: 8, essential: true },
         { key: 'insurance', label: '보험료', amount: 8, essential: true },
-        { key: 'parents', label: '부모 지원', amount: 15, essential: true },
+        { key: 'parents', label: '부모님께 드리는 돈', amount: 15, essential: true },
         { key: 'health', label: '건강·자기계발', amount: 12, essential: true },
         { key: 'leisure', label: '여가·쇼핑', amount: 42, essential: false },
         { key: 'irregular', label: '비정기 적립', amount: 10, essential: false },

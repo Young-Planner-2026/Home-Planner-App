@@ -497,3 +497,20 @@ form.wizard:not([data-step="5"]) .intake-submit .btn-primary, form.wizard:not([d
 .scn-cell .scn-in.sm { width: 5.5em; }
 .scn-row { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
 .demo-banner { border: 2px solid var(--warn); background: var(--warn-bg); }
+
+/* 첫 화면: 데이터 고르기(사례/직접 입력) + 화면 고르기 */
+.start-hero h1 { font-size: 1.6rem; margin: 0 0 6px; }
+.step-n { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 0.85rem; margin-right: 8px; vertical-align: 2px; }
+.mode-grid { display: grid; gap: 12px; grid-template-columns: 1fr; }
+@media (min-width: 720px) { .mode-grid { grid-template-columns: 1fr 1fr; } }
+.mode-card { text-align: left; display: flex; flex-direction: column; gap: 8px; padding: 16px; border: 2px solid var(--border); border-radius: 14px; background: var(--surface); color: inherit; font: inherit; cursor: pointer; min-height: 44px; }
+.mode-card:hover { border-color: var(--accent); }
+.mode-card.on { border-color: var(--accent); background: var(--accent-bg); }
+.mc-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.mc-radio { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--muted); flex: none; position: relative; }
+.mode-card.on .mc-radio { border-color: var(--accent); }
+.mode-card.on .mc-radio::after { content: ''; position: absolute; inset: 3px; border-radius: 50%; background: var(--accent); }
+.mc-title { font-weight: 800; font-size: 1.05rem; }
+.mc-tag { font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--accent); color: #fff; }
+.mc-lines { display: flex; flex-direction: column; gap: 2px; font-size: 0.9rem; color: var(--muted); }
+.mc-note { font-size: 0.82rem; color: var(--warn); font-weight: 600; }

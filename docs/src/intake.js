@@ -30,7 +30,7 @@
     ['food', '식비·생필품', true],
     ['telecom', '통신·구독', true],
     ['insurance', '보험료', true],
-    ['parents', '부모 지원', true],
+    ['parents', '부모님께 드리는 돈', true],
     ['health', '건강·자기계발', true],
     ['leisure', '여가·쇼핑', false],
     ['irregular', '비정기 적립', false],
