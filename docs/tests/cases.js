@@ -35,7 +35,9 @@
     debtTotalNow: '부채 잔액',
     paydayUsable: '마지막 월 납입 제외 재원',
     reachMonth: '목표 도달월',
-    pension: '연금 잔액'
+    pension: '연금 잔액',
+    surplus: '잉여',
+    essential: '필수생활비'
   };
 
   // R 그룹(보고서 가상 고객 B안) 공통 조건
@@ -95,7 +97,21 @@
       expect: { usable: 3471.4, reachMonth: '2030-05' } },
     { id: 'R11', group: 'R', demo: 'report', title: '보고서 표 24: 2027-11부터 6개월 소득 20% 감소(생활비 185) → 3,987.4', plan: 'after-v1', month: '2029-10', opts: A_MODEL,
       scenarios: [{ type: 'incomeDrop', start: '2027-11', months: 6, value: 0.2, living: 185 }],
-      expect: { usable: 3987.4 } }
+      expect: { usable: 3987.4 } },
+
+    // C. 독립 검산(가상 고객 C, 보고서와 무관) — 기대값은 엔진 코드를 쓰지 않고 엑셀 수식으로 계산한 검산표 값.
+    { id: 'C1', group: 'C', demo: 'verify', title: '독립 검산: 2026-12 첫 달(초기 상환 200 후 카드론 이자·원금, 비상금 이자)', plan: 'verify-v1', month: '2026-12',
+      expect: { interest: 4.0, principal: 43.0, debtHigh: 167.3, emergency: 378.3, housing: 611.0 } },
+    { id: 'C2', group: 'C', demo: 'verify', title: '독립 검산: 2027-05 카드론 완제, 남은 상환 예산은 잉여로', plan: 'verify-v1', month: '2027-05',
+      expect: { payoffHigh: '2027-05', principal: 43.1, surplus: 9.9, debtLow: 1138.0 } },
+    { id: 'C3', group: 'C', demo: 'verify', title: '독립 검산: 2028-01 감면 종료(−5)·생활비 2.3% 상승', plan: 'verify-v1', month: '2028-01',
+      expect: { income: 255, essential: 122.8, surplus: 34.1 } },
+    { id: 'C4', group: 'C', demo: 'verify', title: '독립 검산: 2028-03 적금 만기(단리, 세후 이자 포함)·비상금 목표 도달', plan: 'verify-v1', month: '2028-03',
+      expect: { productMaturity: 365.8, emergency: 720.0, housing: 1190.0 } },
+    { id: 'C5', group: 'C', demo: 'verify', title: '독립 검산: 2028-09 보증금 800 반환', plan: 'verify-v1', month: '2028-09',
+      expect: { depositReturn: 800, housing: 2388.1 } },
+    { id: 'C6', group: 'C', demo: 'verify', title: '독립 검산: 2028-11 목표월 판정(주거 250.7 부족 → 미달)', plan: 'verify-v1', month: '2028-11',
+      expect: { usable: 2849.3, emergency: 724.8, debtLow: 948.7, judgeStatus: '미달', shortHousing: 250.7 } }
   ];
 
   function getActual(field, row, result) {
@@ -124,7 +140,7 @@
    * @returns {{id, title, pass, checks:[{field,label,expected,actual,pass}]}}
    */
   function runCase(c, P) {
-    var state = c.demo === 'report' ? P.demo.getDemo() : P.demo.getLegacyDemo();
+    var state = c.demo === 'report' ? P.demo.getDemo() : c.demo === 'verify' ? P.demo.getVerifyDemo() : P.demo.getLegacyDemo();
     var opts = Object.assign({ debtRule: c.debtRule, excludeProducts: !!c.excludeProducts }, c.opts || {});
     if (c.scenarios) opts = P.scenarios.withScenarios(state, c.scenarios, opts);
     var result = P.engine.runPlan(state, c.plan, opts);

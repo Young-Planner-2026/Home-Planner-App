@@ -326,6 +326,32 @@
     ]
   };
 
+  // 독립 검산용 가상 고객 C: 보고서와 무관한 입력. 기대값은 엑셀 수식 검산표(검산표_가상고객C.xlsx)의 계산 결과다.
+  var VERIFY_C = {
+    schemaVersion: 1,
+    activePlanId: 'verify-v1',
+    customer: {
+      name: '가상 고객 C(검증용)', birth: '1995-06', firstJob: '2022-12', job: '사무직', companySize: '중소기업', region: '수도권',
+      grossPrevYear: 3800, netMonthly: 260,
+      taxExemption: { applied: true, start: '2022-12', end: '2027-12', monthlyEffect: 5 },
+      cash: 500, savings: 0, emergency: 100, housing: 600, investment: 300, pension: 0,
+      depositReturn: { amount: 800, month: '2028-09' },
+      debts: [
+        { name: '카드론', balance: 400, rate: 0.139, monthlyPayment: 20 },
+        { name: '학자금 대출', balance: 1200, rate: 0.017, monthlyPayment: 12 }
+      ],
+      goal: { depositTarget: 3000, movingCost: 100, emergencyTarget: 720 }
+    },
+    plans: [{
+      id: 'verify-v1', kind: '설계 후', date: '2026-11-14', name: '독립 검산용 계획',
+      startMonth: '2026-12', targetMonth: '2028-11',
+      essential: 120, optional: 50, extraRepayment: 15, pensionMonthly: 5, housingFirstMonthly: 10,
+      initial: { repayFromCash: 200, emergencyFromCash: 250 },
+      products: [{ type: 'bank', name: '검증용 정기적금', monthly: 30, start: '2027-03', months: 12, rate: 0.035, contributionRate: 0 }]
+    }],
+    assumptions: { livingGrowth: 0.023, emergencyRate: 0.01, housingRate: 0.02, investmentRate: 0.04, highRateThreshold: 0.04, includeInvestmentInHousing: true, rateBasis: 'nominal' }
+  };
+
   function getDemo() {
     return JSON.parse(JSON.stringify(DEMO));
   }
@@ -333,7 +359,11 @@
     return JSON.parse(JSON.stringify(LEGACY));
   }
 
-  var api = { getDemo: getDemo, getLegacyDemo: getLegacyDemo };
+  function getVerifyDemo() {
+    return JSON.parse(JSON.stringify(VERIFY_C));
+  }
+
+  var api = { getDemo: getDemo, getLegacyDemo: getLegacyDemo, getVerifyDemo: getVerifyDemo };
 
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = api;
